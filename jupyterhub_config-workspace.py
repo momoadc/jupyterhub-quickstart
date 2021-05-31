@@ -1,5 +1,45 @@
 # Authenticate users against OpenShift OAuth provider.
 
+
+def get_resource_requirements(username):
+    # TODO:
+    #   add LDAP search and return resource according to the user's role
+    c.KubeSpawner.profile_list = [
+        {
+            'display_name': 'Training Env - Python',
+            'slug': 'training-python',
+            'default': True,
+            'kubespawner_override': {
+                'image': 'training/python:label',
+                'cpu_limit': 1,
+                'mem_limit': '512M',
+            }
+        }, {
+            'display_name': 'Training Env - Datascience',
+            'slug': 'training-datascience',
+            'kubespawner_override': {
+                'image': 'training/datascience:label',
+                'cpu_limit': 2,
+                'mem_limit': '1G',
+            }
+        }, {
+            'display_name': 'DataScience - Small instance',
+            'slug': 'datascience-small',
+            'kubespawner_override': {
+                'image': 'datascience/small:label',
+                'cpu_limit': 3,
+                'mem_limit': '2G',
+            }
+        }, {
+            'display_name': 'DataScience - Medium instance',
+            'slug': 'datascience-medium',
+            'kubespawner_override': {
+                'image': 'datascience/medium:label',
+                'cpu_limit': 4,
+                'mem_limit': '4G',
+            }
+        }
+    ]
 c.JupyterHub.authenticator_class = "openshift"
 
 from oauthenticator.openshift import OpenShiftOAuthenticator
@@ -66,7 +106,7 @@ if volume_size:
         {
             'name': 'data',
             'mountPath': '/opt/app-root',
-            'subPath': 'workspace'
+            'subPath': 'private-workspace'
         }
     ])
 
