@@ -3,9 +3,18 @@
 
 def get_resource_requirements(username):
     # TODO:
-    #   add LDAP search and return resource according to the user's role
+    #   add LDAP search and return resource according to the user's role 
     c.KubeSpawner.profile_list = [
         {
+            'display_name': 'Demo - choose me!!',
+            'slug': 'Demo-python',
+            'default': True,
+            'kubespawner_override': {
+                'image': 'quay.io/ypery/jup-minimal-py38-notebook:latest',
+                'cpu_limit': 1,
+                'mem_limit': '512M',
+            }
+        },{
             'display_name': 'Training Env - Python',
             'slug': 'training-python',
             'default': True,
@@ -40,6 +49,7 @@ def get_resource_requirements(username):
             }
         }
     ]
+get_resource_requirements("test")
 c.JupyterHub.authenticator_class = "openshift"
 
 from oauthenticator.openshift import OpenShiftOAuthenticator

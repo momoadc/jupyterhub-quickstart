@@ -9,7 +9,7 @@ metadata:
     tags: python,jupyter,jupyterhub
 parameters:
 - name: SPAWNER_NAMESPACE
-  value: ''
+  value: 'jupyterhub'
   required: true
 - name: CLUSTER_SUBDOMAIN
   value: ''
@@ -58,14 +58,14 @@ parameters:
 - name: NOTEBOOK_INTERFACE
   value: classic
 - name: OPENSHIFT_PROJECT
-  value: ''
+  value: 'jupyterhub'
   required: false
 - name: VOLUME_SIZE
   description: Amount of storage available to each user.
   value: ''
 - name: IDLE_TIMEOUT
   description: Time in seconds after which idle session is culled.
-  value: ''
+  value: '2628000'
 - name: OAUTH_CLIENT_SECRET
   generate: expression
   from: "[a-zA-Z0-9]{32}"
