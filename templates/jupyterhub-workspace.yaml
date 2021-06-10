@@ -123,17 +123,6 @@ objects:
   spec:
     strategy:
       type: Recreate
-    triggers:
-    - type: ConfigChange
-    - type: ImageChange
-      imageChangeParams:
-        automatic: true
-        containerNames:
-        - wait-for-database
-        - jupyterhub
-        from:
-          kind: ImageStreamTag
-          name: "${JUPYTERHUB_IMAGE}"
     replicas: 1
     selector:
       app: "${APPLICATION_NAME}"
@@ -310,17 +299,6 @@ objects:
           configMap:
             name: "${APPLICATION_NAME}-cfg"
             defaultMode: 420
-    triggers:
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - postgresql
-        from:
-          kind: ImageStreamTag
-          name: postgresql:9.6
-          namespace: openshift
-      type: ImageChange
-    - type: ConfigChange
 - kind: Service
   apiVersion: v1
   metadata:
