@@ -12,7 +12,7 @@ parameters:
   value: 'jupyterhub'
   required: true
 - name: CLUSTER_SUBDOMAIN
-  value: ''
+  value: 'apps.tk2s6gya.eastus.aroapp.io'
   required: true
 - name: APPLICATION_NAME
   value: jupyterhub
