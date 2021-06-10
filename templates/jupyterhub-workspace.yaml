@@ -266,11 +266,11 @@ objects:
         - name: postgresql
           image: postgres:9.6
           env:
-          - name: POSTGRESQL_USER
+          - name: POSTGRES_USER
             value: jupyterhub
-          - name: POSTGRESQL_PASSWORD
+          - name: POSTGRES_PASSWORD
             value: "${DATABASE_PASSWORD}"
-          - name: POSTGRESQL_DATABASE
+          - name: POSTGRES_DB
             value: postgres
           livenessProbe:
             tcpSocket:
