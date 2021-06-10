@@ -18,10 +18,10 @@ parameters:
   value: jupyterhub
   required: true
 - name: JUPYTERHUB_IMAGE
-  value: jupyterhub:3.4.0
+  value: quay.io/ypery/jupyterhub:latest
   required: true
 - name: NOTEBOOK_IMAGE
-  value: s2i-minimal-notebook:3.6
+  value: ypery/jup-minimal-py38-notebook:latest
   required: true
 - name: JUPYTERHUB_CONFIG
   value: ''
