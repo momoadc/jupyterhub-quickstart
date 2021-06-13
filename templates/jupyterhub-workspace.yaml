@@ -275,6 +275,7 @@ objects:
           livenessProbe:
             tcpSocket:
               port: 5432
+            initialDelaySeconds: 60
           ports:
           - containerPort: 5432
             protocol: TCP
