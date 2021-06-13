@@ -264,7 +264,7 @@ objects:
       spec:
         containers:
         - name: postgresql
-          image: bitnami/postgresql:9.6
+          image: registry.redhat.io/rhel8/postgresql-96
           env:
           - name: POSTGRESQL_USER
             value: jupyterhub
