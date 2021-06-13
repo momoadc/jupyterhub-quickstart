@@ -264,7 +264,7 @@ objects:
       spec:
         containers:
         - name: postgresql
-          image: registry.redhat.io/rhel8/postgresql-96
+          image: bitnami/postgresql:9.6
           env:
           - name: POSTGRESQL_USER
             value: jupyterhub
@@ -289,6 +289,7 @@ objects:
               - "-c"
               - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c
                 'SELECT 1'
+            initialDelaySeconds: 60
           volumeMounts:
           - mountPath: "/var/lib/pgsql/data"
             name: data
