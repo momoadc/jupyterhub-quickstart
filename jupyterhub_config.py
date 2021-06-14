@@ -50,15 +50,11 @@ urllib3.disable_warnings()
 instance = Configuration()
 instance.verify_ssl = False
 Configuration.set_default(instance)
-print("finshed with urlib")
 api_client = DynamicClient(ApiClient())
-print("1")
 image_stream_resource = api_client.resources.get(
      api_version='image.openshift.io/v1', kind='ImageStream')
-print("2")
 route_resource = api_client.resources.get(
      api_version='route.openshift.io/v1', kind='Route')
-print("3")
 
 # Work out the name of the JupyterHub deployment passed in environment.
 

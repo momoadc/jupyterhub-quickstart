@@ -52,6 +52,7 @@ def get_resource_requirements(username):
 get_resource_requirements("test")
 c.JupyterHub.authenticator_class = "openshift"
 
+print("config.py: " + os.environ.get('OPENSHIFT_REST_API_URL'))
 from oauthenticator.openshift import OpenShiftOAuthenticator
 OpenShiftOAuthenticator.scope = ['user:full']
 
