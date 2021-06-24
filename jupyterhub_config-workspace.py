@@ -97,6 +97,7 @@ def get_resource_requirements(username):
     return profiles
 
 c.JupyterHub.authenticator_class = "openshift"
+c.KubeSpawner.image_pull_policy = "Always"
 
 from oauthenticator.openshift import OpenShiftOAuthenticator
 OpenShiftOAuthenticator.scope = ['user:full']
