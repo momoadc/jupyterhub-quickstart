@@ -44,6 +44,8 @@ mv /tmp/src/scripts/* /opt/app-root/bin/
 
 mv /tmp/src/start-jupyterhub.sh /opt/app-root/bin/
 
+mv /tmp/src/config.yaml /opt/app-root/config.json
+
 rm -rf /tmp/src
 
 # Scripts used to be kept in /opt/app-root/scripts but are now in the

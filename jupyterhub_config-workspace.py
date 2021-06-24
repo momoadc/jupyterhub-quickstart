@@ -1,12 +1,47 @@
 # Authenticate users against OpenShift OAuth provider.
 
+from os import read
+
+
+def get_ldap_groups(username):
+    import ldap
+    from ldap.filter import escape_filter_chars
+    print("getting ldap groups for: " + username)
+    # LDAP_SERVER = "ldap.server.com"
+    # baseDN = "ou=people,dc=example,dc=com"
+    # ldapObj = ldap.initialize('ldap://%s' % LDAP_SERVER)
+    # userdn = ldapObj.search_s(baseDN,ldap.SCOPE_SUBTREE, "(|(&(objectClass=*)(sAMAccountName=%s)))" % username, ["distinguishedName",])
+    # binaryGroups = ldapObj.search_s(baseDN,
+    #                                 ldap.SCOPE_SUBTREE,
+    #                                 "(member:1.2.840.113556.1.4.1941:={0})"
+    #                                 .format(escape_filter_chars(userdn[0][1]['distinguishedName'][0].decode())),
+    #                                 ['*',])
+    # groups = [group[0] for group in binaryGroups]
+    
+    # usualy you'd want to return groups but here we're using mock data
+    return [ 
+        'cn=group1,ou=groups,dc=example,dc=com',
+        'cn=group2,ou=groups,dc=example,dc=com',
+        'cn=group3,ou=groups,dc=example,dc=com',
+        'cn=group4,ou=groups,dc=example,dc=com',
+        'cn=group5,ou=groups,dc=example,dc=com'
+    ]
+
+def read_config():
+    import json
+
+    configJson = {}
+    with open("/opt/app-root/config.json", "r") as f:
+        configJson = json.loads(f.read())
+    
+    return configJson
+
+
 
 def get_resource_requirements(username):
-    # TODO:
-    #   add LDAP search and return resource according to the user's role 
-    c.KubeSpawner.profile_list = [
+    profiles=[
         {
-            'display_name': 'Demo - choose me!!',
+            'display_name': 'DemoDEF - choose me!!',
             'slug': 'Demo-python',
             'default': True,
             'kubespawner_override': {
@@ -49,10 +84,20 @@ def get_resource_requirements(username):
             }
         }
     ]
-get_resource_requirements("test")
+    
+    userGroups = get_ldap_groups(username)    
+    print(userGroups)
+    config = read_config()
+    print("config")
+    print(config)
+    for group in config['Groups']:
+        if group['name'] in userGroups:
+            profiles += group['profiles']
+    print(profiles)
+    return profiles
+
 c.JupyterHub.authenticator_class = "openshift"
 
-print("config.py: " + os.environ.get('OPENSHIFT_REST_API_URL'))
 from oauthenticator.openshift import OpenShiftOAuthenticator
 OpenShiftOAuthenticator.scope = ['user:full']
 
@@ -184,6 +229,14 @@ def modify_pod_hook(spawner, pod):
                     dict(name='OPENSHIFT_PROJECT', value=name))
 
     return pod
+
+def option_renderer(spawner):
+    name = spawner.user.name
+    print("name: " + name)
+    return get_resource_requirements(name)
+
+c.KubeSpawner.profile_list = option_renderer     
+
 
 c.KubeSpawner.modify_pod_hook = modify_pod_hook
 

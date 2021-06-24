@@ -21,7 +21,7 @@ parameters:
   value: quay.io/ypery/jupyterhub:latest
   required: true
 - name: NOTEBOOK_IMAGE
-  value: quai.io/ypery/jup-minimal-py38-notebook:latest
+  value: quay.io/ypery/jup-minimal-py38-notebook:latest
   required: true
 - name: JUPYTERHUB_CONFIG
   value: ''

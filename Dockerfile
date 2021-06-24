@@ -22,4 +22,7 @@ ENV NPM_CONFIG_PREFIX=/opt/app-root \
 
 RUN /tmp/scripts/assemble
 
+    
+
+
 CMD [ "/opt/app-root/builder/run" ]
