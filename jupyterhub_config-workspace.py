@@ -6,7 +6,6 @@ from os import read
 def get_ldap_groups(username):
     import ldap
     from ldap.filter import escape_filter_chars
-    print("getting ldap groups for: " + username)
     # LDAP_SERVER = "ldap.server.com"
     # baseDN = "ou=people,dc=example,dc=com"
     # ldapObj = ldap.initialize('ldap://%s' % LDAP_SERVER)
@@ -86,14 +85,10 @@ def get_resource_requirements(username):
     ]
     
     userGroups = get_ldap_groups(username)    
-    print(userGroups)
     config = read_config()
-    print("config")
-    print(config)
     for group in config['Groups']:
         if group['name'] in userGroups:
             profiles += group['profiles']
-    print(profiles)
     return profiles
 
 c.JupyterHub.authenticator_class = "openshift"
@@ -233,7 +228,6 @@ def modify_pod_hook(spawner, pod):
 
 def option_renderer(spawner):
     name = spawner.user.name
-    print("name: " + name)
     return get_resource_requirements(name)
 
 c.KubeSpawner.profile_list = option_renderer     
