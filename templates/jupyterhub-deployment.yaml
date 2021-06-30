@@ -122,10 +122,6 @@ objects:
       app: "${APPLICATION_NAME}"
   spec:
     replicas: 1
-    selector:
-      MatchLabels:
-        app: "${APPLICATION_NAME}"
-        deploymentconfig: "${APPLICATION_NAME}"
     template:
       metadata:
         annotations:
