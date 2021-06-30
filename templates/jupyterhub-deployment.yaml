@@ -121,8 +121,6 @@ objects:
     labels:
       app: "${APPLICATION_NAME}"
   spec:
-    strategy:
-      type: Recreate
     replicas: 1
     selector:
       MatchLabels:
