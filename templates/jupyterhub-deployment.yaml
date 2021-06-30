@@ -125,8 +125,9 @@ objects:
       type: Recreate
     replicas: 1
     selector:
-      app: "${APPLICATION_NAME}"
-      deploymentconfig: "${APPLICATION_NAME}"
+      MatchLabels:
+        app: "${APPLICATION_NAME}"
+        deploymentconfig: "${APPLICATION_NAME}"
     template:
       metadata:
         annotations:
