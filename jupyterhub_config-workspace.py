@@ -6,9 +6,12 @@ from os import read
 def get_ldap_groups(username):
     import ldap
     from ldap.filter import escape_filter_chars
-    # LDAP_SERVER = "ldap.server.com"
-    # baseDN = "ou=people,dc=example,dc=com"
-    # ldapObj = ldap.initialize('ldap://%s' % LDAP_SERVER)
+    LDAP_SERVER = "ldap.server.com"
+    baseDN = "ou=people,dc=example,dc=com"
+    ldapUser = ""
+    ldapPassword = ""
+    ldapObj = ldap.initialize('ldap://%s' % LDAP_SERVER)
+    ldapObj.simple_bind_s(ldapUser, ldapPassword)
     # userdn = ldapObj.search_s(baseDN,ldap.SCOPE_SUBTREE, "(|(&(objectClass=*)(sAMAccountName=%s)))" % username, ["distinguishedName",])
     # binaryGroups = ldapObj.search_s(baseDN,
     #                                 ldap.SCOPE_SUBTREE,
@@ -42,9 +45,10 @@ def get_resource_requirements(username):
         {
             'display_name': 'DemoDEF - choose me!!',
             'slug': 'Demo-python',
+            'description': 'quay.io/ypery/jup-pyspark-py38-notebook:latest - 1 CPU & 512M RAM',
             'default': True,
             'kubespawner_override': {
-                'image': 'quay.io/ypery/jup-minimal-py38-notebook:latest',
+                'image': 'quay.io/ypery/jup-pyspark-py38-notebook:latest',
                 'cpu_limit': 1,
                 'mem_limit': '512M',
             }

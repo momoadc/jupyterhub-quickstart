@@ -69,7 +69,35 @@ parameters:
 - name: OAUTH_CLIENT_SECRET
   generate: expression
   from: "[a-zA-Z0-9]{32}"
+- name: LDAP_SERVER
+  value: ""
+  description: LDAP_SERVER, in base64
+  required: true
+- name: LDAP_BASEDN
+  value: ""
+  description: LDAP_baseDN, in base64
+  required: true
+- name: LDAP_PASSWORD
+  value: ""
+  description: LDAP_PASSWORD, in base64
+  required: true
+- name: LDAP_USERNAME
+  value: ""
+  description: LDAP_USERNAME, in base64
+  required: true
+
 objects:
+- apiVersion: v1
+  data:
+    LDAP_SERVER: "${LDAP_SERVER}"
+    LDAP_baseDN: "${LDAP_BASEDN}"
+    password: "${LDAP_PASSWORD}"
+    username: "${LDAP_USERNAME}"
+  kind: Secret
+  metadata:
+    name: ldap
+    namespace: jupyterhub
+  type: Opaque
 - kind: OAuthClient
   apiVersion: oauth.openshift.io/v1
   metadata:
@@ -186,6 +214,28 @@ objects:
             value: "${COOKIE_SECRET}"
           - name: OAUTH_CLIENT_SECRET
             value: "${OAUTH_CLIENT_SECRET}"
+          - name: LDAP_SERVER
+            valueFrom:
+              secretKeyRef:
+                name: ldap
+                key: LDAP_SERVER
+          - name: LDAP_BASEDN
+            valueFrom:
+              secretKeyRef:
+                name: ldap
+                key: LDAP_BASEDN
+          - name: LDAP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ldap
+                key: LDAP_PASSWORD
+          - name: LDAP_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: ldap
+                key: LDAP_USERNAME
+
+
           volumeMounts:
           - name: config
             mountPath: "/opt/app-root/configs"
