@@ -40,10 +40,10 @@ def get_resource_requirements(username):
     {
       'display_name': 'DemoDEF - choose me!!',
       'slug': 'Demo-python',
-      'description': 'quay.io/ypery/jup-pyspark-py38-notebook:latest - 1 CPU & 512M RAM',
+      'description': 'quay.io/ypery/jup-pyspark-py37-notebook:latest - 1 CPU & 512M RAM',
       'default': True,
       'kubespawner_override': {
-        'image': 'quay.io/ypery/jup-pyspark-py38-notebook:latest',
+        'image': 'quay.io/ypery/jup-pyspark-py37-notebook:latest',
         'cpu_limit': 1,
         'mem_limit': '512M',
       }

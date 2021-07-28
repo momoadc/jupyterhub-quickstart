@@ -8,7 +8,7 @@
             "slug": "Demo-python",
             "default": true,
             "kubespawner_override": {
-                "image": "quay.io/ypery/jup-minimal-py38-notebook:latest",
+                "image": "quay.io/ypery/jup-minimal-py37-notebook:latest",
                 "cpu_limit": 1,
                 "mem_limit": "512M"
             }
@@ -31,7 +31,7 @@
             "slug": "Demo-python",
             "default": true,
             "kubespawner_override": {
-                "image": "quay.io/ypery/jup-minimal-py38-notebook:latest",
+                "image": "quay.io/ypery/jup-minimal-py37-notebook:latest",
                 "cpu_limit": 1,
                 "mem_limit": "512M"
             }
@@ -54,7 +54,7 @@
             "slug": "Demo-python",
             "default": true,
             "kubespawner_override": {
-                "image": "quay.io/ypery/jup-minimal-py38-notebook:latest",
+                "image": "quay.io/ypery/jup-minimal-py37-notebook:latest",
                 "cpu_limit": 1,
                 "mem_limit": "512M"
             }
