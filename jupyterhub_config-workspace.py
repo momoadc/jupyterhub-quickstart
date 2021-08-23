@@ -45,8 +45,6 @@ if os.path.exists('/opt/app-root/configs/user_whitelist.txt'):
 
 volume_size = os.environ.get('JUPYTERHUB_VOLUME_SIZE')
 
-c.JupyterHub.authenticate_prometheus = False
-
 
 if volume_size:
     c.KubeSpawner.pvc_name_template = c.KubeSpawner.pod_name_template

@@ -121,6 +121,79 @@ parameters:
       return get_resource_requirements(name)
 
     c.KubeSpawner.profile_list = option_renderer
+
+    from jupyterhub_singleuser_profiles.profiles import SingleuserProfiles
+
+    from kubespawner import KubeSpawner
+    class OpenShiftSpawner(KubeSpawner):
+      def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.single_user_services = []
+        self.single_user_profiles = SingleuserProfiles(gpu_mode=os.environ.get('GPU_MODE'), notebook_namespace=custom_notebook_namespace, verify_ssl=verify_ssl)
+        self.gpu_mode = self.single_user_profiles.gpu_mode
+        self.gpu_count = 0
+        self.deployment_size = None
+        self.uid = None
+        self.fs_gid = None
+
+      def _options_form_default(self):
+        response = html_string
+        return response
+
+      def options_from_form(self, formdata):
+        options = {}
+        cm_data = self.single_user_profiles.user.get(self.user.name)
+        if custom_notebook_namespace:
+            options['custom_image'] = f'image-registry.openshift-image-registry.svc:5000/{namespace}/%s' % cm_data['last_selected_image']
+        else:
+            options['custom_image'] = cm_data['last_selected_image']
+        options['size'] = cm_data['last_selected_size']
+        self.gpu_count = cm_data['gpu']
+        self.image = options['custom_image']
+        self.deployment_size = cm_data['last_selected_size']
+
+        return options
+
+      def get_env(self):
+        env = super(OpenShiftSpawner, self).get_env()
+
+        if custom_notebook_namespace:
+          env['JUPYTERHUB_API_URL'] = f'http://{service_name}.{namespace}:8081/hub/api'
+          env['JUPYTERHUB_ACTIVITY_URL'] = f'http://{service_name}.{namespace}:8081/hub/api/users/{self.user.name}/activity'
+
+        return env
+
+    def apply_pod_profile(spawner, pod):
+      spawner.single_user_profiles.load_profiles(username=spawner.user.name)
+      profile = spawner.single_user_profiles.get_merged_profile(spawner.image_spec, user=spawner.user.name, size=spawner.deployment_size)
+      return SingleuserProfiles.apply_pod_profile(spawner, pod, profile)
+
+    def setup_environment(spawner):
+      spawner.single_user_profiles.load_profiles(username=spawner.user.name)
+      spawner.single_user_profiles.setup_services(spawner, spawner.image_spec, spawner.user.name)
+
+    def clean_environment(spawner):
+      spawner.single_user_profiles.clean_services(spawner, spawner.user.name)
+
+    c.JupyterHub.spawner_class = OpenShiftSpawner
+    c.JupyterHub.authenticate_prometheus = False
+
+    c.OpenShiftSpawner.pre_spawn_hook = setup_environment
+    c.OpenShiftSpawner.post_stop_hook = clean_environment
+    c.OpenShiftSpawner.modify_pod_hook = apply_pod_profile
+    c.OpenShiftSpawner.cpu_limit = float(os.environ.get("SINGLEUSER_CPU_LIMIT", "1"))
+    c.OpenShiftSpawner.mem_limit = os.environ.get("SINGLEUSER_MEM_LIMIT", "1G")
+    c.OpenShiftSpawner.storage_pvc_ensure = True
+    c.KubeSpawner.storage_capacity = os.environ.get("SINGLEUSER_PVC_SIZE", "3Gi")
+    c.KubeSpawner.pvc_name_template = '%s-nb-{username}-pvc' % os.environ['JUPYTERHUB_SERVICE_NAME']
+    c.KubeSpawner.volumes = [dict(name='private', persistentVolumeClaim=dict(claimName=c.KubeSpawner.pvc_name_template)), dict(name='public', persistentVolumeClaim=dict(claimName='public-jupyter-pvc'))]
+    c.KubeSpawner.volume_mounts = [dict(name='public', mountPath='/opt/app-root/src/public'), dict(name='private', mountPath='/opt/app-root/src/private')]
+    c.KubeSpawner.user_storage_class = os.environ.get("JUPYTERHUB_STORAGE_CLASS", c.KubeSpawner.user_storage_class)
+    admin_users = os.environ.get('JUPYTERHUB_ADMIN_USERS')
+    if admin_users:
+      c.Authenticator.admin_users = set(admin_users.split(','))
+
+
   required: false
 - name: JUPYTERHUB_ENVVARS
   value: ''
