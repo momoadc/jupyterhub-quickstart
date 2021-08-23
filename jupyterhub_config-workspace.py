@@ -79,32 +79,6 @@ if volume_size:
         }
     ])
 
-    c.KubeSpawner.init_containers.extend([
-        {
-            'name': 'setup-volume',
-            'image': '%s' % c.KubeSpawner.image_spec,
-            'command': [
-                '/opt/app-root/bin/setup-volume.sh',
-                '/opt/app-root',
-                '/mnt/workspace'
-            ],
-            "resources": {
-                "limits": {
-                    "memory": os.environ.get('NOTEBOOK_MEMORY', '128Mi')
-                },
-                "requests": {
-                    "memory": os.environ.get('NOTEBOOK_MEMORY', '128Mi')
-                }
-            },
-            'volumeMounts': [
-                {
-                    'name': 'data',
-                    'mountPath': '/mnt'
-                }
-            ]
-        }
-    ])
-
 # Make modifications to pod based on user and type of session.
 
 from tornado import gen
