@@ -50,9 +50,12 @@ urllib3.disable_warnings()
 instance = Configuration()
 instance.verify_ssl = False
 Configuration.set_default(instance)
+
 api_client = DynamicClient(ApiClient())
+
 image_stream_resource = api_client.resources.get(
      api_version='image.openshift.io/v1', kind='ImageStream')
+
 route_resource = api_client.resources.get(
      api_version='route.openshift.io/v1', kind='Route')
 
