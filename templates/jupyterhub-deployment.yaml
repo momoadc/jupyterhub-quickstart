@@ -335,17 +335,11 @@ objects:
           volumeMounts:
           - name: config
             mountPath: "/opt/app-root/configs"
-#          - name: py-config
-#            mountPath: /opt/app-root/pyconfigs
         volumes:
         - name: config
           configMap:
             name: "${APPLICATION_NAME}-cfg"
             defaultMode: 420
-#        - name: py-config
-#          configMap:
-#            name: "${APPLICATION_NAME}-cfg"
-#            defaultMode: 530
 - kind: Service
   apiVersion: v1
   metadata:
