@@ -193,7 +193,6 @@ parameters:
     if admin_users:
       c.Authenticator.admin_users = set(admin_users.split(','))
 
-
   required: false
 - name: JUPYTERHUB_ENVVARS
   value: ''
