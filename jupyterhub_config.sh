@@ -11,8 +11,3 @@ fi
 if [ -f /opt/app-root/configs/jupyterhub_config.sh ]; then
     . /opt/app-root/configs/jupyterhub_config.sh
 fi
-
-
-if [ -f /opt/app-root/etc/additional-jupyterhub_config.sh ]; then
-    . /opt/app-root/etc/additional-jupyterhub_config.sh
-fi

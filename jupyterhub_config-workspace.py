@@ -1,10 +1,5 @@
 # Authenticate users against OpenShift OAuth provider.
 
-from os import read
-
-
-
-
 c.JupyterHub.authenticator_class = "openshift"
 c.KubeSpawner.image_pull_policy = "Always"
 
@@ -75,7 +70,7 @@ if volume_size:
         {
             'name': 'data',
             'mountPath': '/opt/app-root',
-            'subPath': 'private-workspace'
+            'subPath': 'workspace'
         }
     ])
 
@@ -116,9 +111,6 @@ def modify_pod_hook(spawner, pod):
                     dict(name='OPENSHIFT_PROJECT', value=name))
 
     return pod
-
-
-
 
 c.KubeSpawner.modify_pod_hook = modify_pod_hook
 

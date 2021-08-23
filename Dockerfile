@@ -22,8 +22,4 @@ ENV NPM_CONFIG_PREFIX=/opt/app-root \
 
 RUN /tmp/scripts/assemble
 
-# Enable jupyter_server_proxy
-# RUN jupyter serverextension enable --sys-prefix jupyter_server_proxy 
-
-
 CMD [ "/opt/app-root/builder/run" ]

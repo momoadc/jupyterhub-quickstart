@@ -23,9 +23,6 @@ npm install -g configurable-http-proxy
 cp /tmp/src/jupyterhub_config.py /opt/app-root/etc/
 cp /tmp/src/jupyterhub_config.sh /opt/app-root/etc/
 
-# cp /tmp/src/additional-jupyterhub_config.py /opt/app-root/etc/
-# cp /tmp/src/additional-jupyterhub_config.sh /opt/app-root/etc/
-
 cp /tmp/src/jupyterhub_config-*.py /opt/app-root/etc/
 cp /tmp/src/jupyterhub_config-*.sh /opt/app-root/etc/
 
@@ -46,8 +43,6 @@ mv /tmp/src/builder /opt/app-root/builder
 mv /tmp/src/scripts/* /opt/app-root/bin/
 
 mv /tmp/src/start-jupyterhub.sh /opt/app-root/bin/
-
-mv /tmp/src/config.yaml /opt/app-root/config.json
 
 rm -rf /tmp/src
 
