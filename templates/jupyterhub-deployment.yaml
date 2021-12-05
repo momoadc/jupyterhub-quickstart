@@ -136,6 +136,7 @@ parameters:
       c.Authenticator.admin_users = set(admin_users.split(','))
 
     c.KubeSpawner.service_account = "notebook"
+    c.KubeSpawner.init_containers = None
 
   required: false
 - name: JUPYTERHUB_ENVVARS

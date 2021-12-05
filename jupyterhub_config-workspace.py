@@ -1,7 +1,6 @@
 # Authenticate users against OpenShift OAuth provider.
 
 c.JupyterHub.authenticator_class = "openshift"
-c.KubeSpawner.image_pull_policy = "Always"
 
 from oauthenticator.openshift import OpenShiftOAuthenticator
 OpenShiftOAuthenticator.scope = ['user:full']
@@ -45,7 +44,6 @@ if os.path.exists('/opt/app-root/configs/user_whitelist.txt'):
 
 volume_size = os.environ.get('JUPYTERHUB_VOLUME_SIZE')
 
-
 if volume_size:
     c.KubeSpawner.pvc_name_template = c.KubeSpawner.pod_name_template
 
@@ -69,6 +67,32 @@ if volume_size:
             'name': 'data',
             'mountPath': '/opt/app-root',
             'subPath': 'workspace'
+        }
+    ])
+
+    c.KubeSpawner.init_containers.extend([
+        {
+            'name': 'setup-volume',
+            'image': '%s' % c.KubeSpawner.image_spec,
+            'command': [
+                '/opt/app-root/bin/setup-volume.sh',
+                '/opt/app-root',
+                '/mnt/workspace'
+            ],
+            "resources": {
+                "limits": {
+                    "memory": os.environ.get('NOTEBOOK_MEMORY', '128Mi')
+                },
+                "requests": {
+                    "memory": os.environ.get('NOTEBOOK_MEMORY', '128Mi')
+                }
+            },
+            'volumeMounts': [
+                {
+                    'name': 'data',
+                    'mountPath': '/mnt'
+                }
+            ]
         }
     ])
 
