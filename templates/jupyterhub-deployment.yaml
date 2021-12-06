@@ -18,7 +18,7 @@ parameters:
   value: jupyterhub
   required: true
 - name: JUPYTERHUB_IMAGE
-  value: quay.io/ypery/jupyterhub:latest
+  value: quay.io/ypery/jupyterhub:v2.0.0
   required: true
 - name: NOTEBOOK_IMAGE
   value: quay.io/ypery/jup-pyspark-py37-notebook:latest
