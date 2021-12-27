@@ -1,0 +1,48 @@
+name: Docker Image CI
+
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches: [ master ]
+
+env:
+  # Note: Currently the dockerfile doesn't support using this parameter to change the jupyterhub version
+  JUPYTERHUB_VERSION: v2.0.0
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # github.repository as <account>/<repo>
+      - name: Build and push container image
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v2
+        with:
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/jupyterhub:${{ env.JUPYTERHUB_VERSION }}
+          context: .
+          push: false
+
+      # github.repository as <account>/<repo>
+      - name: Build and push container image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v2
+        with:
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/jupyterhub:${{ env.JUPYTERHUB_VERSION }}
+          context: .
+          push: true
