@@ -1,14 +1,26 @@
-name: Docker Image CI
+name: Build jupyterhub container
 
 on:
-  pull_request:
-    branches: [ master ]
-  push:
-    branches: [ master ]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'The ref to build (tag/branch name/hash)'
+        required: true
+        type: string
+        
+      tag:
+        description: 'The tag with which to tag the image'
+        required: true
+        type: string
+      
+      push_container_flag:
+        description: 'Whatever to push the image'
+        required: true
+        type: boolean
+
 
 env:
   # Note: Currently the dockerfile doesn't support using this parameter to change the jupyterhub version
-  JUPYTERHUB_VERSION: v1.5
   REGISTRY: ghcr.io
 
 jobs:
@@ -18,6 +30,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          ref: github.event.inputs.ref
 
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
@@ -31,18 +45,18 @@ jobs:
 
       # github.repository as <account>/<repo>
       - name: Build and push container image
-        if: github.event_name == 'pull_request'
+        if: github.event.inputs.push_container_flag == 'false'
         uses: docker/build-push-action@v2
         with:
-          tags: ${{ env.REGISTRY }}/${{ github.repository }}/jupyterhub:${{ env.JUPYTERHUB_VERSION }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/jupyterhub:${{ github.event.inputs.tag }}
           context: .
           push: false
 
       # github.repository as <account>/<repo>
       - name: Build and push container image
-        if: github.event_name != 'pull_request'
+        if: github.event.inputs.push_container_flag == 'true'
         uses: docker/build-push-action@v2
         with:
-          tags: ${{ env.REGISTRY }}/${{ github.repository }}/jupyterhub:${{ env.JUPYTERHUB_VERSION }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/jupyterhub:${{ github.event.inputs.tag }}
           context: .
           push: true
