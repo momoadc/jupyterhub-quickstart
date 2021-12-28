@@ -8,7 +8,7 @@ on:
 
 env:
   # Note: Currently the dockerfile doesn't support using this parameter to change the jupyterhub version
-  JUPYTERHUB_VERSION: v2.0.1
+  JUPYTERHUB_VERSION: v1.5
   REGISTRY: ghcr.io
 
 jobs:
