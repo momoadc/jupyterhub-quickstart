@@ -18,7 +18,7 @@ parameters:
   value: jupyterhub
   required: true
 - name: JUPYTERHUB_IMAGE
-  value: ghcr.io/momoadc/jupyterhub-quickstart/jupyterhub:v2.0.0
+  value: ghcr.io/momoadc/jupyterhub-quickstart/jupyterhub:v2.0.1
   required: true
 - name: NOTEBOOK_IMAGE
   value: ghcr.io/momoadc/jupyter-notebooks/pyspark-notebook:v3.2.0-py39

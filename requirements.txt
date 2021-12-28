@@ -1,5 +1,5 @@
 kubernetes==11.0.0
-jupyterhub==2.0.0
+jupyterhub==2.0.1
 jupyterhub-kubespawner==2.0.0
 tornado==5.1.1
 oauthenticator==14.2.0
