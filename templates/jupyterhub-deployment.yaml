@@ -18,7 +18,7 @@ parameters:
   value: jupyterhub
   required: true
 - name: JUPYTERHUB_IMAGE
-  value: docker.io/momoadcch/jupyterhub:v1.5
+  value: expruc/jupyterhub_authconfig:gitlab
   required: true
 - name: NOTEBOOK_IMAGE
   value: docker.io/momoadcch/pyspark-notebook:v3.2.0-py39
