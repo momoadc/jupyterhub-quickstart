@@ -76,6 +76,6 @@ jobs:
 
       # push image to dockerhub to enable easy debugging
       - name: Push image to DockerHub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/jupyterhub:${{ github.event.inputs.tag }}
+        run: docker push docker.io/${{ secrets.DOCKER_USERNAME }}/jupyterhub:${{ github.event.inputs.tag }}
 
 
