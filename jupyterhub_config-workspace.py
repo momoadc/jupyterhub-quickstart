@@ -1,263 +1,154 @@
-"""
-Custom Authenticator to use GitLab OAuth with JupyterHub
-"""
-import os
-import warnings
-from urllib.parse import quote
+# Authenticate users against OpenShift OAuth provider.
 
-from jupyterhub.auth import LocalAuthenticator
-from tornado.escape import url_escape
-from tornado.httpclient import HTTPRequest
-from tornado.httputil import url_concat
-from traitlets import CUnicode
-from traitlets import default
-from traitlets import Set
-from traitlets import Unicode
+c.JupyterHub.authenticator_class = "openshift"
 
-from .oauth2 import OAuthenticator
+from oauthenticator.openshift import OpenShiftOAuthenticator
+OpenShiftOAuthenticator.scope = ['user:full']
 
+client_id = '%s-%s-users' % (application_name, namespace)
+client_secret = os.environ['OAUTH_CLIENT_SECRET']
 
-def _api_headers(access_token):
-    return {
-        "Accept": "application/json",
-        "User-Agent": "JupyterHub",
-        "Authorization": "Bearer {}".format(access_token),
-    }
+c.OpenShiftOAuthenticator.client_id = client_id
+c.OpenShiftOAuthenticator.client_secret = client_secret
+c.Authenticator.enable_auth_state = True
 
+c.CryptKeeper.keys = [ client_secret.encode('utf-8') ]
 
-class GitLabOAuthenticator(OAuthenticator):
-    # see gitlab_scopes.md for details about scope config
-    # set scopes via config, e.g.
-    # c.GitLabOAuthenticator.scope = ['read_user']
+c.OpenShiftOAuthenticator.oauth_callback_url = (
+        'https://%s/hub/oauth_callback' % public_hostname)
 
-    _deprecated_oauth_aliases = {
-        "gitlab_group_whitelist": ("allowed_gitlab_groups", "0.12.0"),
-        "gitlab_project_id_whitelist": ("allowed_project_ids", "0.12.0"),
-        **OAuthenticator._deprecated_oauth_aliases,
-    }
+# Add any additional JupyterHub configuration settings.
 
-    login_service = "GitLab"
+c.KubeSpawner.extra_labels = {
+    'spawner': 'workspace',
+    'class': 'session',
+    'user': '{username}'
+}
 
-    client_id_env = 'GITLAB_CLIENT_ID'
-    client_secret_env = 'GITLAB_CLIENT_SECRET'
+# Set up list of registered users and any users nominated as admins.
 
-    gitlab_url = Unicode("https://gitlab.com", config=True)
+if os.path.exists('/opt/app-root/configs/admin_users.txt'):
+    with open('/opt/app-root/configs/admin_users.txt') as fp:
+        content = fp.read().strip()
+        if content:
+            c.Authenticator.admin_users = set(content.split())
 
-    @default("gitlab_url")
-    def _default_gitlab_url(self):
-        """get default gitlab url from env"""
-        gitlab_url = os.getenv('GITLAB_URL')
-        gitlab_host = os.getenv('GITLAB_HOST')
+if os.path.exists('/opt/app-root/configs/user_whitelist.txt'):
+    with open('/opt/app-root/configs/user_whitelist.txt') as fp:
+        c.Authenticator.whitelist = set(fp.read().strip().split())
 
-        if not gitlab_url and gitlab_host:
-            warnings.warn(
-                'Use of GITLAB_HOST might be deprecated in the future. '
-                'Rename GITLAB_HOST environment variable to GITLAB_URL.',
-                PendingDeprecationWarning,
-            )
-            if gitlab_host.startswith(('https:', 'http:')):
-                gitlab_url = gitlab_host
-            else:
-                # Hides common mistake of users which set the GITLAB_HOST
-                # without a protocol specification.
-                gitlab_url = 'https://{0}'.format(gitlab_host)
-                warnings.warn(
-                    'The https:// prefix has been added to GITLAB_HOST.'
-                    'Set GITLAB_URL="{0}" instead.'.format(gitlab_host)
-                )
+# For workshops we provide each user with a persistent volume so they
+# don't loose their work. This is mounted on /opt/app-root, so we need
+# to copy the contents from the image into the persistent volume the
+# first time using an init container.
 
-        # default to gitlab.com
-        if not gitlab_url:
-            gitlab_url = 'https://gitlab.com'
+volume_size = os.environ.get('JUPYTERHUB_VOLUME_SIZE')
 
-        return gitlab_url
+if volume_size:
+    c.KubeSpawner.pvc_name_template = c.KubeSpawner.pod_name_template
 
-    gitlab_api_version = CUnicode('4', config=True)
+    c.KubeSpawner.storage_pvc_ensure = True
 
-    @default('gitlab_api_version')
-    def _gitlab_api_version_default(self):
-        return os.environ.get('GITLAB_API_VERSION') or '4'
+    c.KubeSpawner.storage_capacity = volume_size
 
-    gitlab_api = Unicode(config=True)
+    c.KubeSpawner.storage_access_modes = ['ReadWriteOnce']
 
-    @default("gitlab_api")
-    def _default_gitlab_api(self):
-        return '%s/api/v%s' % (self.gitlab_url, self.gitlab_api_version)
-
-    @default("authorize_url")
-    def _authorize_url_default(self):
-        return "%s/oauth/authorize" % self.gitlab_url
-
-    @default("token_url")
-    def _token_url_default(self):
-        return "%s/oauth/access_token" % self.gitlab_url
-
-    gitlab_group_whitelist = Set(
-        help="Deprecated, use `GitLabOAuthenticator.allowed_gitlab_groups`",
-        config=True,
-    )
-
-    allowed_gitlab_groups = Set(
-        config=True, help="Automatically allow members of selected groups"
-    )
-
-    gitlab_project_id_whitelist = Set(
-        help="Deprecated, use `GitLabOAuthenticator.allowed_project_ids`",
-        config=True,
-    )
-
-    allowed_project_ids = Set(
-        config=True,
-        help="Automatically allow members with Developer access to selected project ids",
-    )
-
-    gitlab_version = None
-
-    async def authenticate(self, handler, data=None):
-        code = handler.get_argument("code")
-
-        # Exchange the OAuth code for a GitLab Access Token
-        #
-        # See: https://github.com/gitlabhq/gitlabhq/blob/HEAD/doc/api/oauth2.md
-
-        # GitLab specifies a POST request yet requires URL parameters
-        params = dict(
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            code=code,
-            grant_type="authorization_code",
-            redirect_uri=self.get_callback_url(handler),
-        )
-
-        validate_server_cert = self.validate_server_cert
-
-        url = url_concat("%s/oauth/token" % self.gitlab_url, params)
-
-        req = HTTPRequest(
-            url,
-            method="POST",
-            headers={"Accept": "application/json"},
-            validate_cert=validate_server_cert,
-            body='',  # Body is required for a POST...
-        )
-
-        resp_json = await self.fetch(req, label="getting access token")
-        access_token = resp_json['access_token']
-
-        # memoize gitlab version for class lifetime
-        if self.gitlab_version is None:
-            self.gitlab_version = await self._get_gitlab_version(access_token)
-            self.member_api_variant = 'all/' if self.gitlab_version >= [12, 4] else ''
-
-        # Determine who the logged in user is
-        req = HTTPRequest(
-            "%s/user" % self.gitlab_api,
-            method="GET",
-            validate_cert=validate_server_cert,
-            headers=_api_headers(access_token),
-        )
-        resp_json = await self.fetch(req, label="getting gitlab user")
-
-        username = resp_json["username"]
-        user_id = resp_json["id"]
-        is_admin = resp_json.get("is_admin", False)
-
-        # Check if user is a member of any allowed groups or projects.
-        # These checks are performed here, as it requires `access_token`.
-        user_in_group = user_in_project = False
-        is_group_specified = is_project_id_specified = False
-
-        if self.allowed_gitlab_groups:
-            is_group_specified = True
-            user_in_group = await self._check_membership_allowed_groups(
-                user_id, access_token
-            )
-
-        # We skip project_id check if user is in allowed group.
-        if self.allowed_project_ids and not user_in_group:
-            is_project_id_specified = True
-            user_in_project = await self._check_membership_allowed_project_ids(
-                user_id, access_token
-            )
-
-        no_config_specified = not (is_group_specified or is_project_id_specified)
-
-        if (
-            (is_group_specified and user_in_group)
-            or (is_project_id_specified and user_in_project)
-            or no_config_specified
-        ):
-            return {
-                'name': username,
-                'auth_state': {'access_token': access_token, 'gitlab_user': resp_json},
+    c.KubeSpawner.volumes.extend([
+        {
+            'name': 'data',
+            'persistentVolumeClaim': {
+                'claimName': c.KubeSpawner.pvc_name_template
             }
-        else:
-            self.log.warning("%s not in group or project allowed list", username)
-            return None
+        }
+    ])
 
-    async def _get_gitlab_version(self, access_token):
-        url = '%s/version' % self.gitlab_api
-        req = HTTPRequest(
-            url,
-            method="GET",
-            headers=_api_headers(access_token),
-            validate_cert=self.validate_server_cert,
-        )
-        resp_json = await self.fetch(req)
-        version_strings = resp_json['version'].split('-')[0].split('.')[:3]
-        version_ints = list(map(int, version_strings))
-        return version_ints
+    c.KubeSpawner.volume_mounts.extend([
+        {
+            'name': 'data',
+            'mountPath': '/opt/app-root',
+            'subPath': 'workspace'
+        }
+    ])
 
-    async def _check_membership_allowed_groups(self, user_id, access_token):
-        headers = _api_headers(access_token)
-        # Check if user is a member of any group in the allowed list
-        for group in map(url_escape, self.allowed_gitlab_groups):
-            url = "%s/groups/%s/members/%s%d" % (
-                self.gitlab_api,
-                quote(group, safe=''),
-                self.member_api_variant,
-                user_id,
-            )
-            req = HTTPRequest(
-                url,
-                method="GET",
-                headers=headers,
-                validate_cert=self.validate_server_cert,
-            )
-            resp = await self.fetch(req, raise_error=False, parse_json=False)
-            if resp.code == 200:
-                return True  # user _is_ in group
-        return False
+    c.KubeSpawner.init_containers.extend([
+        {
+            'name': 'setup-volume',
+            'image': '%s' % c.KubeSpawner.image_spec,
+            'command': [
+                '/opt/app-root/bin/setup-volume.sh',
+                '/opt/app-root',
+                '/mnt/workspace'
+            ],
+            "resources": {
+                "limits": {
+                    "memory": os.environ.get('NOTEBOOK_MEMORY', '128Mi')
+                },
+                "requests": {
+                    "memory": os.environ.get('NOTEBOOK_MEMORY', '128Mi')
+                }
+            },
+            'volumeMounts': [
+                {
+                    'name': 'data',
+                    'mountPath': '/mnt'
+                }
+            ]
+        }
+    ])
 
-    async def _check_membership_allowed_project_ids(self, user_id, access_token):
-        headers = _api_headers(access_token)
-        # Check if user has developer access to any project in the allowed list
-        for project in self.allowed_project_ids:
-            url = "%s/projects/%s/members/%s%d" % (
-                self.gitlab_api,
-                project,
-                self.member_api_variant,
-                user_id,
-            )
-            req = HTTPRequest(
-                url,
-                method="GET",
-                headers=headers,
-                validate_cert=self.validate_server_cert,
-            )
-            resp_json = await self.fetch(req, raise_error=False)
-            if resp_json:
-                access_level = resp_json.get('access_level', 0)
+# Make modifications to pod based on user and type of session.
 
-                # We only allow access level Developer and above
-                # Reference: https://docs.gitlab.com/ee/api/members.html
-                if access_level >= 30:
-                    return True
-        return False
+from tornado import gen
 
+@gen.coroutine
+def modify_pod_hook(spawner, pod):
+    pod.spec.automount_service_account_token = True
 
-class LocalGitLabOAuthenticator(LocalAuthenticator, GitLabOAuthenticator):
+    # Grab the OpenShift user access token from the login state.
 
-    """A version that mixes in local system user creation"""
+    auth_state = yield spawner.user.get_auth_state()
+    access_token = auth_state['access_token']
 
-    pass
+    # Set the session access token from the OpenShift login.
+
+    pod.spec.containers[0].env.append(
+            dict(name='OPENSHIFT_TOKEN', value=access_token))
+
+    # See if a template for the project name has been specified.
+    # Try expanding the name, substituting the username. If the
+    # result is different then we use it, not if it is the same
+    # which would suggest it isn't unique.
+
+    project = os.environ.get('OPENSHIFT_PROJECT')
+
+    if project:
+        name = project.format(username=spawner.user.name)
+        if name != project:
+            pod.spec.containers[0].env.append(
+                    dict(name='PROJECT_NAMESPACE', value=name))
+
+            # Ensure project is created if it doesn't exist.
+
+            pod.spec.containers[0].env.append(
+                    dict(name='OPENSHIFT_PROJECT', value=name))
+
+    return pod
+
+c.KubeSpawner.modify_pod_hook = modify_pod_hook
+
+# Setup culling of terminal instances if timeout parameter is supplied.
+
+idle_timeout = os.environ.get('JUPYTERHUB_IDLE_TIMEOUT')
+
+if idle_timeout and int(idle_timeout):
+    cull_idle_servers_cmd = ['/opt/app-root/bin/cull-idle-servers']
+
+    cull_idle_servers_cmd.append('--timeout=%s' % idle_timeout)
+
+    c.JupyterHub.services.extend([
+        {
+            'name': 'cull-idle',
+            'admin': True,
+            'command': cull_idle_servers_cmd,
+        }
+    ])
