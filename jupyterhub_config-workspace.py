@@ -1,15 +1,12 @@
 # Authenticate users against Gitlab OAuth provider.
-
-c.JupyterHub.authenticator_class = "gitlab"
-
 from oauthenticator.gitlab import GitLabOAuthenticator
-GitLabOAuthenticator.scope = ['user:full']
 
-client_id = '%s-%s-users' % (application_name, namespace)
-client_secret = os.environ['OAUTH_CLIENT_SECRET']
+c.JupyterHub.authenticator_class = GitLabOAuthenticator
 
-c.GitLabOAuthenticator.client_id = client_id
-c.GitLabOAuthenticator.client_secret = client_secret
+GitLabOAuthenticator.scope = ['api']
+
+c.GitLabOAuthenticator.client_id = '' #INSERT HERE THE CLIENT_ID AS IN THE APPLICATIONS SCOPE IN GITLAB
+c.GitLabOAuthenticator.client_secret = '' #INSERT HERE THE CLIENT_SECRET AS IN THE APPLICATIONS SCOPE IN GITLAB
 c.Authenticator.enable_auth_state = True
 
 c.CryptKeeper.keys = [ client_secret.encode('utf-8') ]
